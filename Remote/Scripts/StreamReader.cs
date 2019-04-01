@@ -14,7 +14,7 @@ namespace Unity.Labs.FacialRemote
     {
         [SerializeField]
         [Tooltip("Root of character to be be driven.")]
-        GameObject m_Character;
+        public GameObject m_Character;
 
         [SerializeField]
         [Tooltip("Shows extra logging information in the console.")]
