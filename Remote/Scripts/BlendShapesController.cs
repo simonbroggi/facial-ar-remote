@@ -56,24 +56,21 @@ namespace Unity.Labs.FacialRemote
 
         public IStreamReader streamReader { private get; set; }
 
-        void OnEnable ()
+        void Start()
         {
-            IStreamSource streamSource = null;
-            if(streamReader != null)
-                streamSource = streamReader.streamSource;
+            var streamSource = streamReader.streamSource;
             if (streamSource == null)
             {
-                enabled = false;
                 Debug.LogError("Disabling BlendShapesController. No stream source set.", this);
+                enabled = false;
                 return;
             }
-            Debug.Log("stream source is ok");
 
             var streamSettings = streamSource.streamSettings;
             if (streamSettings == null)
             {
-                enabled = false;
                 Debug.LogError("Disabling BlendShapesController. No stream settings", this);
+                enabled = false;
                 return;
             }
 

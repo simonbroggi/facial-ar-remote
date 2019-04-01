@@ -133,23 +133,13 @@ namespace Unity.Labs.FacialRemote
         [HideInInspector]
         public Transform[] animatedBones = new Transform [4];
 
-        void OnEnable()
+        void Start()
         {
-            IStreamSource streamSource = null;
-            if(streamReader != null)
-                streamSource = streamReader.streamSource;
-            
-            if (streamSource == null || !streamSource.active){
-                enabled = false;
-                return;
-            }
             SetupCharacterRigController();
         }
 
         void Update()
         {
-            if(streamReader == null)
-                return;
             var streamSource = streamReader.streamSource;
             if (streamSource == null || !streamSource.active)
                 return;
@@ -163,9 +153,7 @@ namespace Unity.Labs.FacialRemote
 
         void LateUpdate()
         {
-            IStreamSource streamSource = null;
-            if(streamReader != null)
-                streamSource = streamReader.streamSource;
+            var streamSource = streamReader.streamSource;
             if (streamSource == null || !streamSource.active)
                 return;
 

@@ -217,19 +217,7 @@ namespace Unity.Labs.FacialRemote
         {
             var usesStreamReader = obj as IUsesStreamReader;
             if (usesStreamReader != null)
-            {
                 usesStreamReader.streamReader = this;
-                MonoBehaviour mb = usesStreamReader as MonoBehaviour;
-                if(mb != null)
-                {
-                    Debug.Log("streamreader connected to to interface " + mb.name );
-                    (usesStreamReader as MonoBehaviour).enabled = true;
-                }
-                else
-                {
-                    Debug.Log("streamreader connected to interface which isnt a monobehaviour!");
-                }
-            }
         }
     }
 }
