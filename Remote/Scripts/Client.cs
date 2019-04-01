@@ -112,6 +112,7 @@ namespace Unity.Labs.FacialRemote
                 Debug.Log("Not recording!");
                 return;
             }
+
             m_FileStream.Close();
             m_FileStream = null;
 
@@ -174,7 +175,7 @@ namespace Unity.Labs.FacialRemote
 #if UNITY_IOS
                         m_Buffer[lastIndex] = (byte)(m_ARFaceActive ? 1 : 0);
 #endif
-                        if (m_Socket != null && m_Socket.Connected)
+                        if (m_Socket.Connected)
                         {
                             try
                             {
