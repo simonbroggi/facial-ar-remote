@@ -105,7 +105,7 @@ namespace Unity.Labs.FacialRemote
 
             var connected = m_Socket != null && m_Socket.Connected;
             if (m_MainGUI.enabled && connected)
-                m_Client.StartSocketStreaming(m_Socket);
+                m_Client.StartCapture(m_Socket);
 
             m_MainGUI.enabled = !connected;
         }

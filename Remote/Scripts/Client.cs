@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 #if UNITY_IOS
@@ -18,12 +17,6 @@ namespace Unity.Labs.FacialRemote
     /// </summary>
     class Client : MonoBehaviour
     {
-        private Socket m_Socket = null;
-        private string m_BinaryFilePath = "";
-        private FileStream m_FileStream = null;
-
-        public UploaderFTP uploader;
-
         const float k_Timeout = 5;
         const int k_SleepTime = 4;
 
@@ -72,8 +65,6 @@ namespace Unity.Labs.FacialRemote
                 Debug.LogError("Stream settings is not assigned! Deactivating Client.");
                 gameObject.SetActive(false);
             }
-
-            StartCapture();
         }
 
         void Update()
@@ -87,49 +78,11 @@ namespace Unity.Labs.FacialRemote
             m_Running = false;
         }
 
-        public bool IsFileRecording()
-        {
-            return m_FileStream != null;
-        }
-
-        public void StartFileRecording()
-        {
-            if(m_FileStream!=null)
-            {
-                Debug.Log("Already recording!");
-                return;
-            }
-
-            m_BinaryFilePath = Application.persistentDataPath + "/recording.dat"; // TODO: same filename like video
-            m_FileStream = new FileStream(m_BinaryFilePath, FileMode.Create, FileAccess.Write);
-
-        }
-
-        public void StopFileRecording()
-        {
-            if(m_FileStream==null)
-            {
-                Debug.Log("Not recording!");
-                return;
-            }
-
-            m_FileStream.Close();
-            m_FileStream = null;
-
-
-            Debug.Log("recorded to " + m_BinaryFilePath);
-            uploader.UploadFile(m_BinaryFilePath);
-        }
-
-        public void StartSocketStreaming(Socket socket){
-            m_Socket = socket;
-        }
-
         /// <summary>
         /// Starts stream thread using the provided socket.
         /// </summary>
         /// <param name="socket">The socket to use when streaming blend shape data.</param>
-        public void StartCapture()
+        public void StartCapture(Socket socket)
         {
             m_CameraTransform = Camera.main.transform;
             if (!m_CameraTransform)
@@ -156,41 +109,42 @@ namespace Unity.Labs.FacialRemote
 #endif
                 while (m_Running)
                 {
-                    if (m_CurrentTime > 0)
+                    try
                     {
-                        frameNum[0] = count++;
-                        frameTime[0] = m_CurrentTime - m_StartTime;
-                        m_CurrentTime = -1;
+                        if (socket.Connected)
+                        {
+                            if (m_CurrentTime > 0)
+                            {
+                                frameNum[0] = count++;
+                                frameTime[0] = m_CurrentTime - m_StartTime;
+                                m_CurrentTime = -1;
 
-                        m_Buffer[0] = m_StreamSettings.ErrorCheck;
-                        Buffer.BlockCopy(m_BlendShapes, 0, m_Buffer, 1, m_StreamSettings.BlendShapeSize);
+                                m_Buffer[0] = m_StreamSettings.ErrorCheck;
+                                Buffer.BlockCopy(m_BlendShapes, 0, m_Buffer, 1, m_StreamSettings.BlendShapeSize);
 
-                        BlendShapeUtils.PoseToArray(m_FacePose, poseArray);
-                        BlendShapeUtils.PoseToArray(m_CameraPose, cameraPoseArray);
+                                BlendShapeUtils.PoseToArray(m_FacePose, poseArray);
+                                BlendShapeUtils.PoseToArray(m_CameraPose, cameraPoseArray);
 
-                        Buffer.BlockCopy(poseArray, 0, m_Buffer, m_StreamSettings.HeadPoseOffset, BlendShapeUtils.PoseSize);
-                        Buffer.BlockCopy(cameraPoseArray, 0, m_Buffer, m_StreamSettings.CameraPoseOffset, BlendShapeUtils.PoseSize);
-                        Buffer.BlockCopy(frameNum, 0, m_Buffer, m_StreamSettings.FrameNumberOffset, m_StreamSettings.FrameNumberSize);
-                        Buffer.BlockCopy(frameTime, 0, m_Buffer, m_StreamSettings.FrameTimeOffset, m_StreamSettings.FrameTimeSize);
+                                Buffer.BlockCopy(poseArray, 0, m_Buffer, m_StreamSettings.HeadPoseOffset, BlendShapeUtils.PoseSize);
+                                Buffer.BlockCopy(cameraPoseArray, 0, m_Buffer, m_StreamSettings.CameraPoseOffset, BlendShapeUtils.PoseSize);
+                                Buffer.BlockCopy(frameNum, 0, m_Buffer, m_StreamSettings.FrameNumberOffset, m_StreamSettings.FrameNumberSize);
+                                Buffer.BlockCopy(frameTime, 0, m_Buffer, m_StreamSettings.FrameTimeOffset, m_StreamSettings.FrameTimeSize);
 #if UNITY_IOS
-                        m_Buffer[lastIndex] = (byte)(m_ARFaceActive ? 1 : 0);
+                                m_Buffer[lastIndex] = (byte)(m_ARFaceActive ? 1 : 0);
 #endif
-                        if (m_Socket.Connected)
-                        {
-                            try
-                            {
-                                m_Socket.Send(m_Buffer);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogError(e.Message);
+
+                                socket.Send(m_Buffer);
                             }
                         }
-                        if(m_FileStream!=null)
+                        else
                         {
-                            // TODO add offset to append??
-                            m_FileStream.Write(m_Buffer, 0, m_StreamSettings.bufferSize);
+                            TryTimeout();
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError(e.Message);
+                        TryTimeout();
                     }
 
                     Thread.Sleep(k_SleepTime);
@@ -251,5 +205,14 @@ namespace Unity.Labs.FacialRemote
             }
         }
 #endif
+
+        void TryTimeout()
+        {
+            if (m_CurrentTime - m_StartTime > k_Timeout)
+            {
+                m_Running = false;
+                enabled = false;
+            }
+        }
     }
 }
