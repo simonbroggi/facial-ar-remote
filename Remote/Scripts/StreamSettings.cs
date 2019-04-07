@@ -87,7 +87,7 @@ namespace Unity.Labs.FacialRemote
         // 237-264 - Camera Pose
         // 265-268 - Frame Number
         // 269-273 - Frame Time
-        // 274 - Active state
+        // 274 - Active state, Start recording request, Stop recording request
         public int bufferSize { get { return m_BufferSize; } }
 
         public Mapping[] mappings { get { return m_Mappings; }}

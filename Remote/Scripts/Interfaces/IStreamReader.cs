@@ -23,6 +23,16 @@ namespace Unity.Labs.FacialRemote
         bool trackingActive { get; }
 
         /// <summary>
+        /// True when currently requesting start recording
+        /// </summary>
+        bool requestStartRecording { get; }
+
+        /// <summary>
+        /// True when currently requesting stop recording
+        /// </summary>
+        bool requestStopRecording { get; }
+
+        /// <summary>
         /// Current blendshape weight values
         /// </summary>
         float[] blendShapesBuffer { get; }
