@@ -104,7 +104,7 @@ namespace Unity.Labs.FacialRemote
             byte statusByte = buffer[offset + settings.bufferSize - 1];
             m_FaceActive = (statusByte & (1 << 0)) != 0;
             m_StartRecordRequest = (statusByte & (1 << 1)) != 0;
-            m_StopRecordRequest = (statusByte & (1 << 1)) != 0;
+            m_StopRecordRequest = (statusByte & (1 << 2)) != 0;
 
             if (m_VerboseLogging)
             {
