@@ -50,6 +50,8 @@ namespace Unity.Labs.FacialRemote
         int m_TrackingLossCount;
 
         bool m_FaceActive;
+        bool m_StartRecordRequest;
+        bool m_StopRecordRequest;
         Pose m_CameraPose;
         Pose m_HeadPose;
         Vector3 m_LastHeadPosition;
@@ -63,6 +65,8 @@ namespace Unity.Labs.FacialRemote
 
         public float[] blendShapesBuffer { get; private set; }
         public bool trackingActive { get; private set; }
+        public bool requestStartRecording { get; private set; }
+        public bool requestStopRecording { get; private set; }
 
         public Pose headPose { get { return m_HeadPose; } }
         public Pose cameraPose { get { return m_CameraPose; } }
@@ -97,7 +101,10 @@ namespace Unity.Labs.FacialRemote
             var settings = streamSource.streamSettings;
 
             Buffer.BlockCopy(buffer, offset + 1, blendShapesBuffer, 0, settings.BlendShapeSize);
-            m_FaceActive = buffer[offset + settings.bufferSize - 1] == 1;
+            byte statusByte = buffer[offset + settings.bufferSize - 1];
+            m_FaceActive = (statusByte & (1 << 0)) != 0;
+            m_StartRecordRequest = (statusByte & (1 << 1)) != 0;
+            m_StopRecordRequest = (statusByte & (1 << 1)) != 0;
 
             if (m_VerboseLogging)
             {
@@ -191,6 +198,28 @@ namespace Unity.Labs.FacialRemote
 
         void Update()
         {
+            requestStartRecording = m_StartRecordRequest;
+            requestStopRecording = m_StopRecordRequest;
+            
+            NetworkStream netStreamSource = streamSource as NetworkStream;
+            if(netStreamSource != null)
+            {
+                if(netStreamSource.recording)
+                {
+                    if(requestStopRecording && !requestStartRecording)
+                    {
+                        netStreamSource.StopRecording();
+                    }
+                }
+                else
+                {
+                    if(requestStartRecording && !requestStopRecording)
+                    {
+                        netStreamSource.StartRecording();
+                    }
+                }
+            }
+
             var headPosition = m_HeadPose.position;
             if (headPosition == m_LastHeadPosition)
             {

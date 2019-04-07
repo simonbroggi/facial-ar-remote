@@ -36,6 +36,14 @@ namespace Unity.Labs.FacialRemote
         bool m_Running;
 
         float m_StartTime;
+        bool m_StartRecordRequest = false;
+        bool m_StopRecordRquest = false;
+
+        public void setRecordRequest(bool record)
+        {
+            m_StartRecordRequest = record;
+            m_StopRecordRquest = !record;
+        }
 
 #if UNITY_IOS
         bool m_ARFaceActive;
@@ -129,9 +137,15 @@ namespace Unity.Labs.FacialRemote
                                 Buffer.BlockCopy(cameraPoseArray, 0, m_Buffer, m_StreamSettings.CameraPoseOffset, BlendShapeUtils.PoseSize);
                                 Buffer.BlockCopy(frameNum, 0, m_Buffer, m_StreamSettings.FrameNumberOffset, m_StreamSettings.FrameNumberSize);
                                 Buffer.BlockCopy(frameTime, 0, m_Buffer, m_StreamSettings.FrameTimeOffset, m_StreamSettings.FrameTimeSize);
+                                byte statusByte = 0;
 #if UNITY_IOS
-                                m_Buffer[lastIndex] = (byte)(m_ARFaceActive ? 1 : 0);
+                                if(m_ARFaceActive) statusByte |= 1 << 0;
 #endif
+                                if(m_StartRecordRequest) statusByte |= 1 << 1;
+                                if(m_StopRecordRquest) statusByte |= 1 << 2;
+
+                                // Debug.Log("status:" + Convert.ToString(statusByte, 2).PadLeft(8, '0'));
+                                m_Buffer[lastIndex] = statusByte;
 
                                 socket.Send(m_Buffer);
                             }
