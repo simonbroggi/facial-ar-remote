@@ -112,9 +112,9 @@ namespace Unity.Labs.FacialRemote
             new Thread(() =>
             {
                 var count = 0;
-#if UNITY_IOS
+// #if UNITY_IOS
                 var lastIndex = m_Buffer.Length - 1;
-#endif
+// #endif
                 while (m_Running)
                 {
                     try
