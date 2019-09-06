@@ -10,6 +10,8 @@ using UnityEngine;
 using UnityEngine.XR.iOS;
 #endif
 
+using System.IO;
+
 namespace Unity.Labs.FacialRemote
 {
     /// <summary>
@@ -39,10 +41,28 @@ namespace Unity.Labs.FacialRemote
         bool m_StartRecordRequest = false;
         bool m_StopRecordRquest = false;
 
+        BinaryWriter animationStreamWriter = null;
+
         public void setRecordRequest(bool record)
         {
             m_StartRecordRequest = record;
             m_StopRecordRquest = !record;
+
+            if(record)
+            {
+                // open file stream to write
+                animationStreamWriter = new BinaryWriter(File.Open(Application.persistentDataPath + "/animation.dat", FileMode.Create));
+            }
+            else if(animationStreamWriter != null)
+            {
+                //
+                animationStreamWriter.Flush();
+                animationStreamWriter.Close();
+                animationStreamWriter.Dispose();
+                animationStreamWriter = null;
+
+                // upload the file via ftp
+            }
         }
 
 #if UNITY_IOS
@@ -119,8 +139,6 @@ namespace Unity.Labs.FacialRemote
                 {
                     try
                     {
-                        if (socket.Connected)
-                        {
                             if (m_CurrentTime > 0)
                             {
                                 frameNum[0] = count++;
@@ -147,8 +165,15 @@ namespace Unity.Labs.FacialRemote
                                 // Debug.Log("status:" + Convert.ToString(statusByte, 2).PadLeft(8, '0'));
                                 m_Buffer[lastIndex] = statusByte;
 
-                                socket.Send(m_Buffer);
-                            }
+                                if(animationStreamWriter != null)
+                                {
+                                    animationStreamWriter.Write(m_Buffer);
+                                }
+
+                                if (socket.Connected)
+                                {
+                                    socket.Send(m_Buffer);
+                                }
                         }
                         else
                         {
